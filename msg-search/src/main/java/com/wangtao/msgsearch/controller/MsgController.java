@@ -103,7 +103,7 @@ public class MsgController {
         List<BulkOperation> bulkOperations = new ArrayList<>();
         for (int i = 1; i <= msgList.size(); i++) {
             Msg msg = msgList.get(i - 1);
-            String finalI = i + "";
+            String finalI = String.valueOf(i);
             BulkOperation bulkOperation = new BulkOperation.Builder()
                     .index(o -> o.id(finalI).document(msg))
                     .build();
