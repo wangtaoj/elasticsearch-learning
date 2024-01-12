@@ -1,34 +1,31 @@
-package com.wangtao.msgsearch.controller;
+package com.wangtao.es.api;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.FieldValue;
-import co.elastic.clients.elasticsearch._types.query_dsl.*;
+import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
+import co.elastic.clients.elasticsearch._types.query_dsl.MatchQuery;
+import co.elastic.clients.elasticsearch._types.query_dsl.Query;
+import co.elastic.clients.elasticsearch._types.query_dsl.TermsQuery;
+import co.elastic.clients.elasticsearch._types.query_dsl.TermsQueryField;
 import co.elastic.clients.elasticsearch.core.GetRequest;
 import co.elastic.clients.elasticsearch.core.GetResponse;
 import co.elastic.clients.elasticsearch.core.SearchRequest;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
-import com.wangtao.msgsearch.entity.User;
-import lombok.extern.slf4j.Slf4j;
+import com.wangtao.es.api.entity.User;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * @author wangtao
- * Created at 2022/8/21 15:19
+ * Created at 2024-01-12
  */
-@Slf4j
-@RequestMapping("/api/user")
-@RestController
-public class UserController {
+@SpringBootApplication
+public class DocApiTest {
 
     @Autowired
     private ElasticsearchClient elasticsearchClient;
@@ -36,14 +33,15 @@ public class UserController {
     /**
      * 根据文档id查询
      */
-    @GetMapping("/{docId}")
-    public User getByDocId(@PathVariable String docId) throws IOException {
+    public void testGetByDocId() throws IOException {
+        final String docId = "1";
         GetResponse<User> reponse = elasticsearchClient.get(
                 g -> g.index("user").id(docId),
                 User.class
         );
         if (reponse.found()) {
-            return reponse.source();
+            User user = reponse.source();
+            System.out.println(user);
         } else {
             throw new IllegalArgumentException("not found " + docId);
         }
@@ -52,15 +50,16 @@ public class UserController {
     /**
      * 根据文档id查询
      */
-    @GetMapping("/getByDocIdFluent/{docId}")
-    public User getByDocIdFluent(@PathVariable String docId) throws IOException {
+    public void testGetByDocIdFluent() throws IOException {
+        final String docId = "1";
         GetRequest getRequest = new GetRequest.Builder()
                 .index("user")
                 .id(docId)
                 .build();
         GetResponse<User> reponse = elasticsearchClient.get(getRequest, User.class);
         if (reponse.found()) {
-            return reponse.source();
+            User user = reponse.source();
+            System.out.println(user);
         } else {
             throw new IllegalArgumentException("not found " + docId);
         }
@@ -70,8 +69,7 @@ public class UserController {
      *
      * 复杂搜索
      */
-    @GetMapping("/search")
-    public List<User> search() throws IOException {
+    public void testSearch() throws IOException {
         Query byName = new MatchQuery.Builder()
                 .field("name")
                 .query("zhang")
@@ -92,6 +90,7 @@ public class UserController {
                 .build();
         SearchResponse<User> response = elasticsearchClient.search(searchRequest, User.class);
         List<Hit<User>> hits = response.hits().hits();
-        return hits.stream().map(Hit::source).collect(Collectors.toList());
+        List<User> users = hits.stream().map(Hit::source).toList();
+        users.forEach(System.out::println);
     }
 }

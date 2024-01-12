@@ -1,4 +1,4 @@
-package com.wangtao.msgsearch.entity;
+package com.wangtao.es.api.entity;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
