@@ -5,3 +5,5 @@ logging:
   level:
     com:
       wangtao: debug
+    # es请求日志
+    tracer: trace

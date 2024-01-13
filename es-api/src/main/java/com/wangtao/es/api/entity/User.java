@@ -1,8 +1,10 @@
 package com.wangtao.es.api.entity;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
+import lombok.experimental.Accessors;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -12,8 +14,10 @@ import java.time.LocalDateTime;
  * Created at 2022/8/21 15:04
  */
 @NoArgsConstructor
-@AllArgsConstructor
-@Data
+@ToString
+@Setter
+@Getter
+@Accessors(chain = true)
 public class User {
 
     private Integer userId;
