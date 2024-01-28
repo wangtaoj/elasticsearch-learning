@@ -241,8 +241,11 @@ public class DocApiTest {
                 .query(query)
                 .build();
         SearchResponse<User> response = esClient.search(searchRequest, User.class);
+        // 当且仅当track_total_hits显示指定为false，才会为null
+        assert response.hits().total() != null;
         List<Hit<User>> hits = response.hits().hits();
         List<User> users = hits.stream().map(Hit::source).toList();
+        System.out.println(response.hits().total().value());
         users.forEach(System.out::println);
     }
 
@@ -262,11 +265,18 @@ public class DocApiTest {
                 """;
         SearchRequest searchRequest = new SearchRequest.Builder()
                 .index(INDEX)
+                .trackTotalHits(t -> t.enabled(true))
                 .withJson(new StringReader(queryJson))
                 .build();
         SearchResponse<User> response = esClient.search(searchRequest, User.class);
+        /*
+         * 当且仅当track_total_hits显示指定为false，才会为null
+         * track_total_hits=true，超过10000条数据时也会返回精确总数
+         */
+        assert response.hits().total() != null;
         List<Hit<User>> hits = response.hits().hits();
         List<User> users = hits.stream().map(Hit::source).toList();
+        System.out.println(response.hits().total().value());
         users.forEach(System.out::println);
     }
 }
