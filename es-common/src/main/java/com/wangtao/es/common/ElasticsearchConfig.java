@@ -17,6 +17,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.text.SimpleDateFormat;
+import java.util.TimeZone;
 
 /**
  * @author wangtao
@@ -45,8 +46,11 @@ public class ElasticsearchConfig {
     private ObjectMapper createObjectMapper() {
         ObjectMapper objectMapper = new ObjectMapper();
 
-        //设置java.util.Date时间类的序列化以及反序列化的格式
+        // 设置全局的DateFormat
         objectMapper.setDateFormat(new SimpleDateFormat(STANDARD_PATTERN));
+
+        // 设置全局的时区, Jackson默认值为UTC
+        objectMapper.setTimeZone(TimeZone.getDefault());
 
         // 初始化JavaTimeModule
         JavaTimeModule javaTimeModule = JavaTimeModuleUtils.create();
