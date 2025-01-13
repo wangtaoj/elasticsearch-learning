@@ -9,11 +9,13 @@ import co.elastic.clients.elasticsearch._types.query_dsl.TermsQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.TermsQueryField;
 import co.elastic.clients.elasticsearch.core.BulkRequest;
 import co.elastic.clients.elasticsearch.core.BulkResponse;
+import co.elastic.clients.elasticsearch.core.ClearScrollRequest;
 import co.elastic.clients.elasticsearch.core.CreateRequest;
 import co.elastic.clients.elasticsearch.core.DeleteRequest;
 import co.elastic.clients.elasticsearch.core.GetRequest;
 import co.elastic.clients.elasticsearch.core.GetResponse;
 import co.elastic.clients.elasticsearch.core.IndexRequest;
+import co.elastic.clients.elasticsearch.core.ScrollResponse;
 import co.elastic.clients.elasticsearch.core.SearchRequest;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.UpdateRequest;
@@ -26,6 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.util.CollectionUtils;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -33,8 +36,12 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 /**
  * @author wangtao
@@ -278,5 +285,47 @@ public class DocApiTest {
         List<User> users = hits.stream().map(Hit::source).toList();
         System.out.println(response.hits().total().value());
         users.forEach(System.out::println);
+    }
+
+    @Test
+    public void testScroll() throws IOException {
+        AtomicInteger total = new AtomicInteger();
+        scroll(INDEX, User.class, 10, datas -> total.addAndGet(datas.size()));
+        System.out.println("total: " + total);
+    }
+
+    private <T> void scroll(String index, Class<T> clazz, int size, Consumer<List<T>> consumer) throws IOException {
+        SearchResponse<T> searchRsp = esClient.search(
+            new SearchRequest.Builder()
+                .index(index)
+                .size(size)
+                .scroll(s -> s.time("1m"))
+                .build(),
+            clazz
+        );
+        List<T> datas = searchRsp.hits().hits().stream().map(Hit::source).toList();
+        Set<String> scrollIdSet = new HashSet<>();
+        String scrollId = searchRsp.scrollId();
+        scrollIdSet.add(scrollId);
+        try {
+            consumer.accept(datas);
+            while (!CollectionUtils.isEmpty(datas)) {
+                final String finalScrollId = scrollId;
+                ScrollResponse<T> scrollRsp = esClient.scroll(
+                    builder -> builder.scrollId(finalScrollId).scroll(s -> s.time("1m")),
+                    clazz
+                );
+                scrollId = scrollRsp.scrollId();
+                scrollIdSet.add(scrollId);
+                datas = scrollRsp.hits().hits().stream().map(Hit::source).toList();
+                consumer.accept(datas);
+            }
+        } finally {
+            esClient.clearScroll(
+                new ClearScrollRequest.Builder()
+                    .scrollId(new ArrayList<>(scrollIdSet))
+                    .build()
+            );
+        }
     }
 }
