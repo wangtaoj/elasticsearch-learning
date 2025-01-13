@@ -2,11 +2,8 @@ package com.wangtao.es.api;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.FieldValue;
-import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
-import co.elastic.clients.elasticsearch._types.query_dsl.MatchQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
-import co.elastic.clients.elasticsearch._types.query_dsl.TermsQuery;
-import co.elastic.clients.elasticsearch._types.query_dsl.TermsQueryField;
+import co.elastic.clients.elasticsearch._types.query_dsl.QueryBuilders;
 import co.elastic.clients.elasticsearch.core.BulkRequest;
 import co.elastic.clients.elasticsearch.core.BulkResponse;
 import co.elastic.clients.elasticsearch.core.ClearScrollRequest;
@@ -35,7 +32,6 @@ import java.io.StringReader;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -229,18 +225,15 @@ public class DocApiTest {
      */
     @Test
     public void testSearch() throws IOException {
-        Query byName = new MatchQuery.Builder()
+        Query byName = QueryBuilders.match()
                 .field("name")
                 .query("zhang")
                 .build()._toQuery();
-        TermsQueryField termsQueryField = new TermsQueryField.Builder()
-                .value(Arrays.asList(FieldValue.of(25), FieldValue.of(20)))
-                .build();
-        Query inAge = new TermsQuery.Builder()
+        Query inAge = QueryBuilders.terms()
                 .field("age")
-                .terms(termsQueryField)
+                .terms(builder -> builder.value(List.of(FieldValue.of(25), FieldValue.of(20))))
                 .build()._toQuery();
-        Query query = new BoolQuery.Builder()
+        Query query = QueryBuilders.bool()
                 .must(byName, inAge)
                 .build()._toQuery();
         SearchRequest searchRequest = new SearchRequest.Builder()
